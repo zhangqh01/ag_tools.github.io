@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能导航系统</title>
+    <style>
+        /* 响应式布局（参考网页1/3） */
+        body {
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            font-family: system-ui, sans-serif;
+        }
+
+        /* 左侧菜单容器（参考网页5） */
+        .sidebar {
+            width: 240px;
+            background: #2c3e50;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* 导航按钮样式（结合网页2/5） */
+        .nav-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 6px;
+            background: #34495e;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: #3d566e;
+            transform: translateX(5px);
+        }
+
+        .nav-btn.active {
+            background: #3498db;
+            box-shadow: 0 2px 8px rgba(52,152,219,0.3);
+        }
+
+        /* 右侧内容框架（参考网页6/8） */
+        .content-frame {
+            flex: 1;
+            border: none;
+            background: #f8f9fa;
+        }
+
+        /* 移动端适配（参考网页3） */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧导航 -->
+    <nav class="sidebar">
+        <h2 style="color:#ecf0f1;">快速导航面板</h2>
+        <button class="nav-btn active" data-src="https://toolonline.net/react-speed-test">🚀 反应速度测试</button>
+        <button class="nav-btn" data-src="https://toolonline.net/number-sequence-memory">🌐 瞬间记忆测试</button>
+        <button class="nav-btn" data-src="https://toolonline.net/sequence-memory">🔄 顺序记忆测试</button>
+        <button class="nav-btn" data-src="https://toolonline.net/click-speed-test">✨ 点击速度测试</button>
+    </nav>
+
+    <!-- 右侧内容 -->
+    <iframe 
+        id="contentFrame"
+        class="content-frame"
+        src="https://www.baidu.com"
+        frameborder="0"
+        loading="lazy"
+        allowfullscreen>
+    </iframe>
+
+    <script>
+        // 动态切换内容（参考网页6/8）
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有激活状态
+                document.querySelectorAll('.nav-btn').forEach(b => 
+                    b.classList.remove('active'));
+                
+                // 设置当前激活状态
+                this.classList.add('active');
+                
+                // 更新iframe内容（参考网页7）
+                const frame = document.getElementById('contentFrame');
+                frame.src = this.dataset.src;
+            });
+        });
+
+        // 框架高度自适应（参考网页6）
+        window.onload = function() {
+            const frame = document.getElementById('contentFrame');
+            frame.style.height = window.innerHeight + 'px';
+        }
+
+        // 移动端点击优化（参考网页3）
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('touchstart', handleClick);
+            btn.addEventListener('click', handleClick);
+        });
+
+        function handleClick(e) {
+            e.preventDefault();
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = 'none';
+            }, 200);
+        }
+
+    </script>
+</body>
+</html>
