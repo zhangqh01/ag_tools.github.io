@@ -2,34 +2,31 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>智能导航系统</title>
     <script src="https://cdn.jsdelivr.net/npm/fastclick@1.0.6/lib/fastclick.min.js"></script>
-    <link rel="prefetch" href="https://toolonline.net/number-sequence-memory">
-		<link rel="prefetch" href="https://toolonline.net/sequence-memory">	
-		<link rel="prefetch" href="https://toolonline.net/click-speed-test">	
-    <link rel="prefetch" href="https://toolonline.net/react-speed-test">	
     <style>
-        /* 响应式布局（参考网页1/3） */
+        /* 响应式布局 */
         body {
             margin: 0;
             display: flex;
             min-height: 100vh;
             font-family: system-ui, sans-serif;
+            flex-direction: row;
         }
 
-        /* 左侧菜单容器（参考网页5） */
+        /* 左侧菜单容器*/
         .sidebar {
             width: 240px;
             background: #2c3e50;
             padding: 20px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
         }
 
-        /* 导航按钮样式（结合网页2/5） */
+        /* 导航按钮样式 */
         .nav-btn {
-        	  will-change: transform, opacity;  /* 预声明动画属性[6](@ref) */
-				    transform: translateZ(0);         /* 强制启用GPU加速[6](@ref) */
             display: block;
             width: 100%;
             padding: 12px 20px;
@@ -40,25 +37,29 @@
             color: white;
             text-align: left;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            will-change: transform;
         }
 
-				/* 优化过渡效果 */
-				.nav-btn:hover {
-				    transform: translateX(5px) translateZ(0); /* 保持3D变换 */
-				    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 平滑曲线 */
-				}
- 
+        .nav-btn:hover {
+            background: #3d566e;
+            transform: translateX(5px);
+        }
+
         .nav-btn.active {
             background: #3498db;
             box-shadow: 0 2px 8px rgba(52,152,219,0.3);
+            transform: translateX(8px);
         }
 
-        /* 右侧内容框架（参考网页6/8） */
+        /* 右侧内容框架 */
         .content-frame {
             flex: 1;
             border: none;
             background: #f8f9fa;
+            transition: opacity 0.3s ease;
         }
 
         /* 移动端适配 */
@@ -70,11 +71,18 @@
                 width: 100%;
                 height: auto;
                 padding: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .nav-btn {
+                margin: 6px 0;
+                padding: 10px 15px;
             }
         }
+      
     </style>
 </head>
 <body>
+	  <div class="loader"></div>
     <!-- 左侧导航 -->
     <nav class="sidebar">
         <h2 style="color:#ecf0f1;">快速导航面板</h2>
@@ -95,58 +103,75 @@
     </iframe>
 
     <script>
-    	   // 初始化FastClick（仅移动端生效）
-        if ('ontouchstart' in window) {  // 移动端检测
-            FastClick.attach(document.body);
+       // 设备检测
+        const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
+        // 初始化FastClick
+        if(isTouchDevice()) {
+            FastClick.attach(document.body)
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.style.cursor = 'default'
+            })
         }
 
-        // 双端事件绑定
-        function initButtonEvents(btn) {
-            // 移动端事件
-            btn.addEventListener('touchstart', handleAction, { passive: true });
-            // PC端事件
-            btn.addEventListener('mousedown', handleAction);
-            btn.addEventListener('click', handleAction);
+        // 统一事件处理
+        let lastAction = 0
+        const actionHandler = function(e) {
+            const now = Date.now()
+            if(now - lastAction < 300) return
+            lastAction = now
+
+            document.querySelectorAll('.nav-btn').forEach(b => 
+                b.classList.remove('active'))
+            this.classList.add('active')
+
+            // 平滑切换
+            const frame = document.getElementById('contentFrame')
+            const loader = document.querySelector('.loader')
+            frame.style.opacity = 0
+            loader.style.display = 'block'
+            
+            setTimeout(() => {
+                frame.src = this.dataset.src
+                frame.onload = () => {
+                    loader.style.display = 'none'
+                    frame.style.opacity = 1
+                }
+            }, 200)
         }
 
-        // 统一事件处理器
-        let lastActionTime = 0;
-       // 修改iframe切换逻辑
-				function handleAction(e) {
-				    const target = e.currentTarget;
-				    const frame = document.getElementById('contentFrame');
-				    
-				    // 添加切换动画过渡
-				    frame.style.opacity = 0;
-				    requestAnimationFrame(() => {
-				        frame.src = target.dataset.src;
-				        frame.onload = () => {
-				            frame.style.opacity = 1;
-				            frame.style.transition = 'opacity 0.2s ease';
-				        }
-				    });
-				}
-
-        // 设备类型检测
-        function isTouchDevice() {
-            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        }
-
-        // 动态绑定事件
+        // 事件绑定
         document.querySelectorAll('.nav-btn').forEach(btn => {
             if(isTouchDevice()) {
-                btn.style.cursor = 'default'; // 移动端优化指针样式
+                btn.addEventListener('touchstart', actionHandler, {passive: true})
+            } else {
+                btn.addEventListener('click', actionHandler)
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(5px)'
+                })
+                btn.addEventListener('mouseleave', function() {
+                    if(!this.classList.contains('active')) {
+                        this.style.transform = 'none'
+                    }
+                })
             }
-            initButtonEvents(btn);
-        });
+        })
 
-
-        // 框架高度自适应
-        window.onload = function() {
-            const frame = document.getElementById('contentFrame');
-            frame.style.height = window.innerHeight + 'px';
+        // 动态高度
+        const resizeFrame = () => {
+            const frame = document.getElementById('contentFrame')
+            frame.style.height = window.innerHeight + 'px'
         }
-    
+        window.addEventListener('resize', resizeFrame)
+        window.addEventListener('load', resizeFrame)
+
+        // 预加载资源（网页7）
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            const link = document.createElement('link')
+            link.rel = 'prefetch'
+            link.href = btn.dataset.src
+            document.head.appendChild(link)
+        })
     </script>
 </body>
 </html>
